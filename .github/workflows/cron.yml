@@ -1,0 +1,21 @@
+# GitHub Actions Cron（Supabase Edge Functionsの代替）
+# 毎日午前9時（JST）に実行
+name: Daily Site Check
+
+on:
+  schedule:
+    # 毎日 00:00 UTC (09:00 JST)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  check-sites:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Daily Check
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            "${{ secrets.SUPABASE_FUNCTION_URL }}/daily-check"
+
