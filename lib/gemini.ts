@@ -16,7 +16,7 @@ export async function analyzeDiff(
   addedContent: string[],
   removedContent: string[]
 ): Promise<AIAnalysis> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `
 あなたはWebマーケティングの専門家です。

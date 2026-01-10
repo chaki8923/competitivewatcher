@@ -141,3 +141,27 @@ CREATE TRIGGER update_monitored_sites_updated_at
   BEFORE UPDATE ON monitored_sites
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- site_snapshots への INSERT を許可
+CREATE POLICY "Users can insert snapshots for own sites"
+  ON site_snapshots FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM monitored_sites
+      WHERE monitored_sites.id = site_snapshots.site_id
+      AND monitored_sites.user_id = auth.uid()
+    )
+  );
+
+
+  -- site_changes への INSERT を許可
+CREATE POLICY "Users can insert changes for own sites"
+  ON site_changes FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM monitored_sites
+      WHERE monitored_sites.id = site_changes.site_id
+      AND monitored_sites.user_id = auth.uid()
+    )
+  );

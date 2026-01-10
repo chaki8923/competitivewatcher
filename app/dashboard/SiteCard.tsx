@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import CheckingModal from "./CheckingModal";
+import CheckResultModal from "./CheckResultModal";
 
 type Site = {
   id: string;
@@ -20,6 +22,9 @@ export default function SiteCard({ site, onUpdate }: Props) {
   const [showMenu, setShowMenu] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [checkProgress, setCheckProgress] = useState(0);
+  const [showResult, setShowResult] = useState(false);
+  const [checkResult, setCheckResult] = useState<any>(null);
 
   const handleToggleActive = async () => {
     setLoading(true);
@@ -72,11 +77,24 @@ export default function SiteCard({ site, onUpdate }: Props) {
   const handleCheckNow = async () => {
     setChecking(true);
     setShowMenu(false);
+    setCheckProgress(0);
     
     try {
+      // プログレスアニメーション
+      const progressInterval = setInterval(() => {
+        setCheckProgress((prev) => {
+          if (prev >= 95) return prev;
+          const increment = Math.random() * 15;
+          return Math.min(prev + increment, 95);
+        });
+      }, 500);
+
       const response = await fetch(`/api/sites/${site.id}/check`, {
         method: "POST",
       });
+
+      clearInterval(progressInterval);
+      setCheckProgress(100);
 
       const data = await response.json();
 
@@ -84,49 +102,51 @@ export default function SiteCard({ site, onUpdate }: Props) {
         throw new Error(data.error || "チェックに失敗しました");
       }
 
-      if (data.hasChanges) {
-        alert(`変更を検出しました！\n重要度: ${data.importance}\n\n${data.aiAnalysis.summary}`);
-      } else {
-        alert("変更は検出されませんでした");
-      }
-
-      onUpdate();
+      // 結果を保存してモーダル表示
+      setCheckResult(data);
+      
+      // 少し待ってから結果を表示
+      setTimeout(() => {
+        setChecking(false);
+        setShowResult(true);
+        onUpdate();
+      }, 500);
     } catch (err: any) {
       console.error(err);
-      alert(err.message || "チェックに失敗しました");
-    } finally {
       setChecking(false);
+      alert(err.message || "チェックに失敗しました");
     }
   };
 
   return (
-    <div className="p-6 hover:bg-gray-50 transition">
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <a href={`/dashboard/sites/${site.id}`}>
-            <h3 className="text-lg font-semibold text-gray-900 hover:text-primary-600 transition">
-              {site.name}
-            </h3>
-          </a>
-          <a
-            href={site.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-primary-600 hover:underline mt-1 inline-block"
-          >
-            {site.url} ↗
-          </a>
-          <p className="text-xs text-gray-500 mt-2">
-            {site.last_checked_at
-              ? `最終チェック: ${new Date(
-                  site.last_checked_at
-                ).toLocaleDateString("ja-JP")} ${new Date(
-                  site.last_checked_at
-                ).toLocaleTimeString("ja-JP")}`
-              : "未チェック"}
-          </p>
-        </div>
-        <div className="flex items-center space-x-3">
+    <>
+      <div className="p-6 hover:bg-gray-50 transition">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <a href={`/dashboard/sites/${site.id}`}>
+              <h3 className="text-lg font-semibold text-gray-900 hover:text-primary-600 transition">
+                {site.name}
+              </h3>
+            </a>
+            <a
+              href={site.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-primary-600 hover:underline mt-1 inline-block"
+            >
+              {site.url} ↗
+            </a>
+            <p className="text-xs text-gray-500 mt-2">
+              {site.last_checked_at
+                ? `最終チェック: ${new Date(
+                    site.last_checked_at
+                  ).toLocaleDateString("ja-JP")} ${new Date(
+                    site.last_checked_at
+                  ).toLocaleTimeString("ja-JP")}`
+                : "未チェック"}
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
           <span
             className={`px-3 py-1 rounded-full text-xs font-medium ${
               site.is_active
@@ -190,8 +210,30 @@ export default function SiteCard({ site, onUpdate }: Props) {
             )}
           </div>
         </div>
+        </div>
       </div>
-    </div>
+
+      {/* チェック中モーダル */}
+      <CheckingModal
+        isOpen={checking}
+        siteName={site.name}
+        progress={checkProgress}
+      />
+
+      {/* 結果表示モーダル */}
+      {checkResult && (
+        <CheckResultModal
+          isOpen={showResult}
+          onClose={() => {
+            setShowResult(false);
+            setCheckResult(null);
+          }}
+          result={checkResult}
+          siteName={site.name}
+          siteId={site.id}
+        />
+      )}
+    </>
   );
 }
 

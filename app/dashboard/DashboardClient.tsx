@@ -94,6 +94,12 @@ export default function DashboardClient({ user, profile, sites }: Props) {
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">{user.email}</span>
               <a
+                href="/dashboard/history"
+                className="text-sm text-gray-600 hover:text-gray-900 transition"
+              >
+                履歴
+              </a>
+              <a
                 href="/dashboard/settings"
                 className="text-sm text-gray-600 hover:text-gray-900 transition"
               >

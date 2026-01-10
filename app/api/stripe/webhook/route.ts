@@ -10,15 +10,23 @@ const supabase = createClient(
 );
 
 export async function POST(request: Request) {
+  console.log('🔔 Webhook received');
+  
   const body = await request.text();
   const sig = request.headers.get('stripe-signature');
 
   if (!sig) {
+    console.error('❌ No signature header');
     return NextResponse.json(
       { error: 'No signature' },
       { status: 400 }
     );
   }
+
+  // 環境変数の確認
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  console.log('🔑 Webhook secret exists:', !!webhookSecret);
+  console.log('🔑 Secret starts with:', webhookSecret?.substring(0, 10));
 
   let event: Stripe.Event;
 
@@ -26,10 +34,11 @@ export async function POST(request: Request) {
     event = stripe.webhooks.constructEvent(
       body,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET || ''
+      webhookSecret || ''
     );
+    console.log('✅ Webhook verified:', event.type);
   } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
+    console.error('❌ Webhook signature verification failed:', err.message);
     return NextResponse.json(
       { error: `Webhook Error: ${err.message}` },
       { status: 400 }
@@ -38,32 +47,38 @@ export async function POST(request: Request) {
 
   // イベント処理
   try {
+    console.log(`📨 Processing event: ${event.type}`);
+    
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+        console.log('🛒 Checkout completed:', session.id);
         await handleCheckoutCompleted(session);
         break;
       }
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
+        console.log('🔄 Subscription updated:', subscription.id);
         await handleSubscriptionUpdated(subscription);
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
+        console.log('🗑️ Subscription deleted:', subscription.id);
         await handleSubscriptionDeleted(subscription);
         break;
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        console.log(`⚠️ Unhandled event type: ${event.type}`);
     }
 
+    console.log('✅ Webhook processed successfully');
     return NextResponse.json({ received: true });
   } catch (err: any) {
-    console.error('Webhook handler error:', err);
+    console.error('❌ Webhook handler error:', err);
     return NextResponse.json(
       { error: err.message },
       { status: 500 }
@@ -72,20 +87,32 @@ export async function POST(request: Request) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  console.log('📦 Checkout session:', {
+    id: session.id,
+    customer: session.customer,
+    subscription: session.subscription,
+    metadata: session.metadata,
+  });
+
   const userId = session.metadata?.user_id;
   const plan = session.metadata?.plan;
 
   if (!userId || !plan) {
+    console.error('❌ Missing metadata:', { userId, plan });
     throw new Error('Missing metadata');
   }
+
+  console.log(`👤 Updating user ${userId} to plan: ${plan}`);
 
   // サブスクリプション情報を取得
   const subscription = await stripe.subscriptions.retrieve(
     session.subscription as string
   );
 
+  console.log('💳 Subscription:', subscription.id);
+
   // Supabaseを更新
-  await supabase
+  const { error } = await supabase
     .from('profiles')
     .update({
       plan,
@@ -94,7 +121,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     })
     .eq('id', userId);
 
-  console.log(`Subscription created for user ${userId}: ${plan}`);
+  if (error) {
+    console.error('❌ Supabase update error:', error);
+    throw error;
+  }
+
+  console.log(`✅ Subscription created for user ${userId}: ${plan}`);
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {

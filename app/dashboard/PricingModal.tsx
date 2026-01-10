@@ -58,13 +58,13 @@ export default function PricingModal({ isOpen, onClose, currentPlan }: Props) {
     {
       id: "pro",
       name: "Pro",
-      price: "¥8,900",
+      price: "¥4,800",
       features: ["5サイトまで", "毎日チェック", "Slack通知", "優先サポート"],
     },
     {
       id: "business",
       name: "Business",
-      price: "¥19,900",
+      price: "¥9,800",
       features: [
         "20サイトまで",
         "毎日チェック",

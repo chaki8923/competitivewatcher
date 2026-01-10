@@ -35,6 +35,8 @@ export async function POST(
   }
 
   try {
+    const startTime = Date.now();
+    
     // スクレイピング実行
     const scrapedContent = await scrapeSite(site.url);
 
@@ -62,6 +64,12 @@ export async function POST(
     }
 
     // 差分チェック
+    let checkHistoryData: any = {
+      site_id: site.id,
+      has_changes: false,
+      check_duration_ms: 0,
+    };
+
     if (lastSnapshot) {
       const diffResult = compareContent(
         lastSnapshot.html_content,
@@ -91,6 +99,18 @@ export async function POST(
           notified: false,
         }).select().single();
 
+        // 履歴データを更新
+        checkHistoryData = {
+          ...checkHistoryData,
+          has_changes: true,
+          change_id: change?.id,
+          importance,
+          changes_count: diffResult.changesCount,
+          change_percentage: diffResult.changePercentage,
+          ai_summary: aiAnalysis.summary,
+          ai_intent: aiAnalysis.intent,
+        };
+
         // 通知を送信
         if (change) {
           try {
@@ -106,7 +126,7 @@ export async function POST(
 
             if (profile && (profile.notification_email || profile.notification_slack)) {
               await notifyChange(
-                user?.user.email || '',
+                user?.user?.email || '',
                 profile.slack_webhook_url,
                 {
                   siteName: site.name,
@@ -136,6 +156,13 @@ export async function POST(
           .update({ last_checked_at: new Date().toISOString() })
           .eq('id', site.id);
 
+        // チェック時間を計算
+        const duration = Date.now() - startTime;
+        checkHistoryData.check_duration_ms = duration;
+
+        // チェック履歴を保存
+        await supabase.from('site_check_history').insert(checkHistoryData);
+
         return NextResponse.json({
           hasChanges: true,
           diffResult,
@@ -151,12 +178,33 @@ export async function POST(
       .update({ last_checked_at: new Date().toISOString() })
       .eq('id', site.id);
 
+    // チェック時間を計算
+    const duration = Date.now() - startTime;
+    checkHistoryData.check_duration_ms = duration;
+
+    // チェック履歴を保存（変更なし）
+    await supabase.from('site_check_history').insert(checkHistoryData);
+
     return NextResponse.json({
       hasChanges: false,
       message: '変更は検出されませんでした',
     });
   } catch (error: any) {
     console.error('Check error:', error);
+    
+    // エラーも履歴に記録
+    try {
+      await supabase.from('site_check_history').insert({
+        site_id: params.id,
+        has_changes: false,
+        has_error: true,
+        error_message: error.message,
+        check_duration_ms: Date.now() - Date.now(), // エラー時は0
+      });
+    } catch (historyError) {
+      console.error('Failed to save error history:', historyError);
+    }
+    
     return NextResponse.json(
       { error: error.message || 'チェックに失敗しました' },
       { status: 500 }
