@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import AddSiteModal from "./AddSiteModal";
 import SiteCard from "./SiteCard";
 import PricingModal from "./PricingModal";
+import { MdCompareArrows } from "react-icons/md";
 
 type User = {
   id: string;
@@ -108,6 +109,13 @@ export default function DashboardClient({ user, profile, sites }: Props) {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">{user.email}</span>
+              <a
+                href="/dashboard/compare"
+                className="text-sm text-gray-600 hover:text-gray-900 transition flex items-center space-x-1"
+              >
+                <MdCompareArrows className="text-lg" />
+                <span>スクショ比較</span>
+              </a>
               <a
                 href="/dashboard/history"
                 className="text-sm text-gray-600 hover:text-gray-900 transition"

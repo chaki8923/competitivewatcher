@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { MdCompareArrows } from "react-icons/md";
 
 type Site = {
   id: string;
@@ -105,6 +106,10 @@ export default function HistoryClient({ user, sites, history }: Props) {
             </Link>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">{user.email}</span>
+              <Link href="/dashboard/compare" className="text-sm text-gray-600 hover:text-gray-900 transition flex items-center space-x-1">
+                <MdCompareArrows className="text-lg" />
+                <span>スクショ比較</span>
+              </Link>
               <Link href="/dashboard/settings" className="text-sm text-gray-600 hover:text-gray-900">
                 設定
               </Link>
