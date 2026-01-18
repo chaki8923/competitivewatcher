@@ -167,7 +167,7 @@ export default function SettingsClient({ user, profile }: Props) {
                     id="slack_webhook_url"
                     value={slackWebhookUrl}
                     onChange={(e) => setSlackWebhookUrl(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                     placeholder="https://hooks.slack.com/services/..."
                   />
                   <p className="text-xs text-gray-500 mt-1">

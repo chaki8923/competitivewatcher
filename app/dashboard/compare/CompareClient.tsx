@@ -157,7 +157,7 @@ export default function CompareClient({ user, sites }: Props) {
               <select
                 value={selectedSite}
                 onChange={(e) => setSelectedSite(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition text-gray-900"
               >
                 <option value="">サイトを選択...</option>
                 {sites.map((site) => (
@@ -178,7 +178,7 @@ export default function CompareClient({ user, sites }: Props) {
                 value={snapshot1}
                 onChange={(e) => setSnapshot1(e.target.value)}
                 disabled={!selectedSite || loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
               >
                 <option value="">日付を選択...</option>
                 {snapshots.map((snap) => (
@@ -205,7 +205,7 @@ export default function CompareClient({ user, sites }: Props) {
                 value={snapshot2}
                 onChange={(e) => setSnapshot2(e.target.value)}
                 disabled={!selectedSite || loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
               >
                 <option value="">日付を選択...</option>
                 {snapshots.map((snap) => (
