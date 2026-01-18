@@ -49,6 +49,7 @@ export default function CompareClient({ user, sites }: Props) {
   const [viewMode, setViewMode] = useState<"side-by-side" | "slider">("side-by-side");
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
   const leftScrollRef = useRef<HTMLDivElement>(null);
   const rightScrollRef = useRef<HTMLDivElement>(null);
@@ -305,13 +306,14 @@ export default function CompareClient({ user, sites }: Props) {
               <div
                 ref={leftScrollRef}
                 onScroll={() => handleScroll('left')}
-                className="overflow-y-auto max-h-[calc(100vh-300px)] bg-gray-50"
+                className="overflow-y-auto max-h-[calc(100vh-200px)] bg-gray-50"
               >
                 {snap1?.screenshot_url && (
                   <img
                     src={snap1.screenshot_url}
                     alt="Before"
-                    className="w-full h-auto"
+                    className="w-full h-auto cursor-pointer hover:opacity-90 transition"
+                    onClick={() => setSelectedImage(snap1.screenshot_url)}
                   />
                 )}
               </div>
@@ -331,13 +333,14 @@ export default function CompareClient({ user, sites }: Props) {
               <div
                 ref={rightScrollRef}
                 onScroll={() => handleScroll('right')}
-                className="overflow-y-auto max-h-[calc(100vh-300px)] bg-gray-50"
+                className="overflow-y-auto max-h-[calc(100vh-200px)] bg-gray-50"
               >
                 {snap2?.screenshot_url && (
                   <img
                     src={snap2.screenshot_url}
                     alt="After"
-                    className="w-full h-auto"
+                    className="w-full h-auto cursor-pointer hover:opacity-90 transition"
+                    onClick={() => setSelectedImage(snap2.screenshot_url)}
                   />
                 )}
               </div>
@@ -368,7 +371,7 @@ export default function CompareClient({ user, sites }: Props) {
             </div>
             <div
               className="relative overflow-hidden cursor-ew-resize"
-              style={{ height: 'calc(100vh - 300px)' }}
+              style={{ height: 'calc(100vh - 200px)' }}
               onMouseMove={handleSliderDrag}
               onMouseDown={() => setIsDragging(true)}
               onMouseUp={() => setIsDragging(false)}
@@ -414,19 +417,56 @@ export default function CompareClient({ user, sites }: Props) {
                 </div>
               </div>
 
-              {/* ラベル */}
-              <div className="absolute top-4 left-4 bg-gray-700 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center space-x-1">
+              {/* ラベル（クリックで拡大表示） */}
+              <button
+                onClick={() => snap1?.screenshot_url && setSelectedImage(snap1.screenshot_url)}
+                className="absolute top-4 left-4 bg-gray-700 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center space-x-1 hover:bg-gray-800 transition z-20 cursor-pointer"
+              >
                 <HiCamera className="text-sm" />
-                <span>比較元</span>
-              </div>
-              <div className="absolute top-4 right-4 bg-primary-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center space-x-1">
+                <span>比較元（クリックで拡大）</span>
+              </button>
+              <button
+                onClick={() => snap2?.screenshot_url && setSelectedImage(snap2.screenshot_url)}
+                className="absolute top-4 right-4 bg-primary-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center space-x-1 hover:bg-primary-700 transition z-20 cursor-pointer"
+              >
                 <HiCamera className="text-sm" />
-                <span>比較先</span>
-              </div>
+                <span>比較先（クリックで拡大）</span>
+              </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* 画像拡大モーダル */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black bg-opacity-90 p-4 animate-fadeIn"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative w-full h-full flex flex-col items-center justify-center">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 md:top-8 md:right-8 bg-white text-gray-900 rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-100 transition z-10 shadow-lg"
+              aria-label="閉じる"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="relative w-full h-full overflow-auto flex justify-center items-start">
+              <img
+                src={selectedImage}
+                alt="スクリーンショット拡大"
+                className="w-full h-auto object-contain"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-gray-700 to-gray-900 text-white text-sm px-4 py-2 rounded-full shadow-lg z-10">
+              スクロールして全体を確認できます
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

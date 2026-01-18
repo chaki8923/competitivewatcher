@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MdFeedback, MdClose, MdSend, MdThumbUp, MdCheck } from "react-icons/md";
+import { MdFeedback, MdClose, MdSend, MdThumbUp, MdCheck, MdDelete } from "react-icons/md";
 import { HiLightBulb } from "react-icons/hi";
 
 type Feedback = {
@@ -118,6 +118,26 @@ export default function FeedbackWidget({ isAdmin }: Props) {
     }
   };
 
+  const handleDelete = async (feedbackId: string) => {
+    if (!confirm("この要望を削除しますか？この操作は取り消せません。")) return;
+
+    try {
+      const response = await fetch(`/api/feedback/${feedbackId}/delete`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        fetchFeedbacks();
+      } else {
+        const data = await response.json();
+        alert(data.error || "削除に失敗しました");
+      }
+    } catch (error) {
+      console.error("削除エラー:", error);
+      alert("削除に失敗しました");
+    }
+  };
+
   return (
     <>
       {/* フローティングボタン */}
@@ -218,13 +238,24 @@ export default function FeedbackWidget({ isAdmin }: Props) {
                           <MdThumbUp className="text-sm" />
                           <span>{feedback.likes_count}</span>
                         </button>
-                        {isAdmin && feedback.status === "open" && (
-                          <button
-                            onClick={() => handleResolve(feedback.id)}
-                            className="text-xs bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
-                          >
-                            解決済みにする
-                          </button>
+                        {isAdmin && (
+                          <div className="flex items-center space-x-2">
+                            {feedback.status === "open" && (
+                              <button
+                                onClick={() => handleResolve(feedback.id)}
+                                className="text-xs bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
+                              >
+                                解決済みにする
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDelete(feedback.id)}
+                              className="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition flex items-center space-x-1"
+                              title="削除"
+                            >
+                              <MdDelete className="text-sm" />
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
