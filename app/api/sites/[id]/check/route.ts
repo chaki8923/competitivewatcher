@@ -5,6 +5,7 @@ import { compareContent, calculateImportance } from '@/lib/differ';
 import { analyzeDiff } from '@/lib/gemini';
 import { notifyChange } from '@/lib/notifications';
 import { uploadScreenshot, isR2Configured } from '@/lib/r2';
+import { getDailyCheckLimit } from '@/lib/stripe';
 
 /**
  * 手動チェックエンドポイント（テスト用）
@@ -24,15 +25,42 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // リクエストボディから compareSnapshotId を取得（オプション）
-  let body: { compareSnapshotId?: string } = {};
-  try {
-    body = await request.json();
-  } catch {
-    // ボディがない場合は無視
+
+  // ユーザーのプロフィールを取得（プランと日次チェック回数を確認）
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('plan, daily_check_count, last_check_date')
+    .eq('id', session.user.id)
+    .single();
+
+  if (profileError || !profile) {
+    return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
   }
 
-  console.log('🔍 リクエストボディ:', body);
+  // 日次チェック制限を確認
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const dailyLimit = getDailyCheckLimit(profile.plan);
+  
+  // 日付が変わっていたらカウントをリセット
+  let currentCheckCount = profile.daily_check_count || 0;
+  if (profile.last_check_date !== today) {
+    currentCheckCount = 0;
+  }
+
+  // 制限チェック（無制限でない場合）
+  if (dailyLimit !== -1 && currentCheckCount >= dailyLimit) {
+    console.log(`🚫 日次チェック制限超過: ${currentCheckCount}/${dailyLimit} (プラン: ${profile.plan})`);
+    return NextResponse.json(
+      { 
+        error: '本日のチェック回数が上限に達しました', 
+        dailyLimit,
+        currentCount: currentCheckCount,
+        plan: profile.plan,
+        needsUpgrade: true,
+      },
+      { status: 429 } // Too Many Requests
+    );
+  }
 
   // サイト情報を取得
   const { data: site, error: siteError } = await supabase
@@ -48,6 +76,22 @@ export async function POST(
 
   try {
     const startTime = Date.now();
+
+    // チェック回数をインクリメント
+    const newCheckCount = currentCheckCount + 1;
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        daily_check_count: newCheckCount,
+        last_check_date: today,
+      })
+      .eq('id', session.user.id);
+
+    if (updateError) {
+      console.error('⚠️ チェック回数の更新に失敗:', updateError);
+    } else {
+      console.log(`✅ チェック回数を更新: ${newCheckCount}/${dailyLimit === -1 ? '無制限' : dailyLimit} (プラン: ${profile.plan})`);
+    }
     
     // R2が設定されている場合はスクリーンショットを撮影
     const takeScreenshot = isR2Configured();
@@ -74,44 +118,15 @@ export async function POST(
     }
 
     // 前回のスナップショットを取得（スクショURLも含む）
-    // compareSnapshotId が指定されている場合は、そのスナップショットを使用
-    let lastSnapshot: any = null;
+    const { data: lastSnapshot } = await supabase
+      .from('site_snapshots')
+      .select('*')
+      .eq('site_id', site.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
     
-    if (body.compareSnapshotId) {
-      console.log(`📅 指定されたスナップショットID: ${body.compareSnapshotId}`);
-      
-      // 指定されたスナップショットを取得
-      const { data, error } = await supabase
-        .from('site_snapshots')
-        .select('*')
-        .eq('id', body.compareSnapshotId)
-        .eq('site_id', site.id)
-        .single();
-      
-      if (error) {
-        console.error('❌ スナップショット取得エラー:', error);
-      }
-      
-      lastSnapshot = data;
-      
-      if (lastSnapshot) {
-        console.log(`✅ 指定された日付のスナップショットを使用: ${lastSnapshot.created_at}`);
-      } else {
-        console.warn('⚠️ 指定されたスナップショットが見つかりません');
-      }
-    } else {
-      // 最新のスナップショットを取得
-      const { data } = await supabase
-        .from('site_snapshots')
-        .select('*')
-        .eq('site_id', site.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      lastSnapshot = data;
-      console.log(`📅 最新のスナップショットを使用`);
-    }
+    console.log(`📅 最新のスナップショットを使用`);
 
     // 前回のスクリーンショットURLを取得
     let screenshotBeforeUrl: string | null = null;

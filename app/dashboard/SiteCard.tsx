@@ -3,7 +3,6 @@
 import { useState } from "react";
 import CheckingModal from "./CheckingModal";
 import CheckResultModal from "./CheckResultModal";
-import DateSelectModal from "./DateSelectModal";
 
 type Site = {
   id: string;
@@ -26,7 +25,8 @@ export default function SiteCard({ site, onUpdate }: Props) {
   const [checkProgress, setCheckProgress] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [checkResult, setCheckResult] = useState<any>(null);
-  const [showDateSelect, setShowDateSelect] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitInfo, setLimitInfo] = useState<any>(null);
 
   const handleToggleActive = async () => {
     setLoading(true);
@@ -76,7 +76,7 @@ export default function SiteCard({ site, onUpdate }: Props) {
     }
   };
 
-  const handleCheckNow = async (snapshotId?: string) => {
+  const handleCheckNow = async () => {
     setChecking(true);
     setShowMenu(false);
     setCheckProgress(0);
@@ -93,10 +93,6 @@ export default function SiteCard({ site, onUpdate }: Props) {
 
       const response = await fetch(`/api/sites/${site.id}/check`, {
         method: "POST",
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: snapshotId ? JSON.stringify({ snapshot_id: snapshotId }) : undefined,
       });
 
       clearInterval(progressInterval);
@@ -105,6 +101,14 @@ export default function SiteCard({ site, onUpdate }: Props) {
       const data = await response.json();
 
       if (!response.ok) {
+        // 制限超過の場合は専用モーダルを表示
+        if (response.status === 429 && data.needsUpgrade) {
+          clearInterval(progressInterval);
+          setChecking(false);
+          setLimitInfo(data);
+          setShowLimitModal(true);
+          return;
+        }
         throw new Error(data.error || "チェックに失敗しました");
       }
 
@@ -122,10 +126,6 @@ export default function SiteCard({ site, onUpdate }: Props) {
       setChecking(false);
       alert(err.message || "チェックに失敗しました");
     }
-  };
-
-  const handleDateSelect = (snapshotId: string, date: string) => {
-    handleCheckNow(snapshotId);
   };
 
   return (
@@ -202,19 +202,6 @@ export default function SiteCard({ site, onUpdate }: Props) {
                     {checking ? "チェック中..." : "今すぐチェック"}
                   </button>
                   <button
-                    onClick={() => {
-                      setShowMenu(false);
-                      setShowDateSelect(true);
-                    }}
-                    disabled={loading || checking}
-                    className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 disabled:opacity-50 border-b flex items-center space-x-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>日付を指定してチェック</span>
-                  </button>
-                  <button
                     onClick={handleToggleActive}
                     disabled={loading || checking}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -257,14 +244,65 @@ export default function SiteCard({ site, onUpdate }: Props) {
         />
       )}
 
-      {/* 日付選択モーダル */}
-      <DateSelectModal
-        isOpen={showDateSelect}
-        onClose={() => setShowDateSelect(false)}
-        siteId={site.id}
-        siteName={site.name}
-        onSelectDate={handleDateSelect}
-      />
+
+      {/* 制限超過モーダル */}
+      {showLimitModal && limitInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                <span className="text-3xl">⚠️</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                本日のチェック上限に達しました
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {limitInfo.plan === 'free' 
+                  ? `無料プランでは1日${limitInfo.dailyLimit}回までチェック可能です。`
+                  : `Proプランでは1日${limitInfo.dailyLimit}回までチェック可能です。`}
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-yellow-800">
+                  <strong>本日の利用状況:</strong> {limitInfo.currentCount} / {limitInfo.dailyLimit}回
+                </p>
+              </div>
+              <div className="space-y-3">
+                {limitInfo.plan === 'free' && (
+                  <button
+                    onClick={() => {
+                      setShowLimitModal(false);
+                      window.location.href = '/dashboard#pricing';
+                    }}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all font-semibold shadow-lg"
+                  >
+                    🚀 Proにアップグレード（20回/日）
+                  </button>
+                )}
+                {limitInfo.plan === 'pro' && (
+                  <button
+                    onClick={() => {
+                      setShowLimitModal(false);
+                      window.location.href = '/dashboard#pricing';
+                    }}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all font-semibold shadow-lg"
+                  >
+                    🚀 Businessにアップグレード（無制限）
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowLimitModal(false)}
+                  className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium"
+                >
+                  閉じる
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-4">
+                💡 制限は毎日0時にリセットされます
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
