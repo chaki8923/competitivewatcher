@@ -96,7 +96,7 @@ export default function AddSiteModal({ isOpen, onClose, onSuccess }: Props) {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
               placeholder="例: 競合A社"
             />
           </div>
@@ -114,7 +114,7 @@ export default function AddSiteModal({ isOpen, onClose, onSuccess }: Props) {
               required
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
               placeholder="https://example.com"
             />
             <p className="text-xs text-gray-500 mt-1">
