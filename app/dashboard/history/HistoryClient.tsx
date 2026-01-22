@@ -409,7 +409,7 @@ export default function HistoryClient({ user, sites, history, plan }: Props) {
                             <img
                               src={item.screenshot_before_url}
                               alt="前回チェック時のスクリーンショット"
-                              className="w-full h-auto group-hover:scale-105 transition-transform duration-300"
+                              className="w-full h-auto"
                             />
                             <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity" />
                             <div className="absolute top-2 right-2 bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -446,7 +446,7 @@ export default function HistoryClient({ user, sites, history, plan }: Props) {
                           <img
                             src={item.screenshot_url}
                             alt="今回チェック時のスクリーンショット"
-                            className="w-full h-auto group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-auto"
                           />
                           <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity" />
                           <div className="absolute top-2 right-2 bg-white bg-opacity-90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
