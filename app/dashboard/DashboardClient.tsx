@@ -31,6 +31,21 @@ type Site = {
   created_at: string;
 };
 
+type NotificationType = {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  site_id?: string;
+  change_id?: string;
+  type?: string;
+  feedback?: {
+    title: string;
+  };
+};
+
 type Props = {
   user: User;
   profile: Profile;
@@ -43,7 +58,7 @@ export default function DashboardClient({ user, profile, sites }: Props) {
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -195,9 +210,7 @@ export default function DashboardClient({ user, profile, sites }: Props) {
                             onClick={() => handleMarkAsRead(notification.id)}
                           >
                             <p className="text-sm text-gray-900 mb-1">
-                              {notification.type === "feedback_resolved"
-                                ? `「${notification.feedback.title}」が解決済みになりました`
-                                : `「${notification.feedback.title}」にいいねがつきました`}
+                              {notification.title || notification.message}
                             </p>
                             <p className="text-xs text-gray-500">
                               {new Date(notification.created_at).toLocaleString("ja-JP")}
