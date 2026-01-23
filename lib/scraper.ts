@@ -27,10 +27,26 @@ export async function scrapeSite(
     const puppeteerCore = await import('puppeteer-core');
     const chromium = await import('@sparticuz/chromium');
     
+    // Lambda/Vercelの環境変数を設定
+    process.env.FONTCONFIG_PATH = '/tmp';
+    
+    const executablePath = await chromium.default.executablePath();
+    
+    console.log('🔍 Chromium executablePath:', executablePath);
+    
     browser = await puppeteerCore.default.launch({
-      args: chromium.default.args,
+      args: [
+        ...chromium.default.args,
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        '--disable-setuid-sandbox',
+        '--no-first-run',
+        '--no-sandbox',
+        '--no-zygote',
+        '--single-process',
+      ],
       defaultViewport: chromium.default.defaultViewport,
-      executablePath: await chromium.default.executablePath(),
+      executablePath,
       headless: chromium.default.headless,
     });
   } else {
