@@ -1,4 +1,5 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+// Supabase Edge Function - runs in Deno runtime
+// Note: TypeScript errors for Deno imports are expected in IDE but won't affect runtime
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -6,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // CORS対応
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -41,7 +42,13 @@ serve(async (req) => {
     console.log(`Found ${sites?.length || 0} active sites to check`)
 
     // 各サイトをチェック（Next.jsのAPIを呼び出す）
-    const results = []
+    const results: Array<{
+      siteId: string;
+      siteName: string;
+      success: boolean;
+      hasChanges?: boolean;
+      error?: string;
+    }> = []
     for (const site of sites || []) {
       try {
         const appUrl = Deno.env.get('APP_URL') || 'http://localhost:3000'

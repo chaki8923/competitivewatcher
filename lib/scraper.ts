@@ -1,4 +1,3 @@
-import { chromium } from 'playwright';
 import { parse } from 'node-html-parser';
 
 export type ScrapedContent = {
@@ -10,7 +9,7 @@ export type ScrapedContent = {
 };
 
 /**
- * Playwrightでサイトをスクレイピング
+ * Puppeteerでサイトをスクレイピング（Vercel/Lambda対応）
  * @param url スクレイピング対象のURL
  * @param options スクレイピングオプション
  */
@@ -18,20 +17,52 @@ export async function scrapeSite(
   url: string,
   options: { takeScreenshot?: boolean } = {}
 ): Promise<ScrapedContent> {
-  const browser = await chromium.launch({
-    headless: true,
-  });
+  // Vercel環境判定
+  const isProduction = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+  let browser;
+  
+  if (isProduction) {
+    // 本番環境: puppeteer-core + @sparticuz/chromium
+    const puppeteerCore = await import('puppeteer-core');
+    const chromium = await import('@sparticuz/chromium');
+    
+    browser = await puppeteerCore.default.launch({
+      args: chromium.default.args,
+      defaultViewport: chromium.default.defaultViewport,
+      executablePath: await chromium.default.executablePath(),
+      headless: chromium.default.headless,
+    });
+  } else {
+    // 開発環境: puppeteer (Chromium同梱版)
+    const puppeteerFull = await import('puppeteer');
+    
+    browser = await puppeteerFull.default.launch({
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+      ],
+      headless: true,
+    });
+  }
 
   try {
-    const context = await browser.newContext({
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      viewport: { width: 1920, height: 1080 },
-    });
-
-    const page = await context.newPage();
+    const page = await browser.newPage();
+    
+    // ユーザーエージェント設定
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+    );
+    
+    // ビューポート設定
+    await page.setViewport({ width: 1920, height: 1080 });
     
     // ページ読み込み（より柔軟な戦略）
     try {
+      console.log(`🌐 ページにアクセス中: ${url}`);
+      
       // まず domcontentloaded で待機（より早く完了する）
       await page.goto(url, { 
         waitUntil: 'domcontentloaded',
@@ -40,7 +71,10 @@ export async function scrapeSite(
 
       // ネットワークがアイドルになるまで待つ（タイムアウトしても続行）
       try {
-        await page.waitForLoadState('networkidle', { timeout: 20000 });
+        await page.waitForNetworkIdle({ 
+          timeout: 20000,
+          idleTime: 500 
+        });
       } catch (networkIdleError) {
         console.log('⚠️ ネットワークアイドル待機がタイムアウトしましたが、続行します');
       }
@@ -50,7 +84,7 @@ export async function scrapeSite(
     }
 
     // JavaScriptの実行を待つ
-    await page.waitForTimeout(1000);
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // レイジーロード画像を読み込むためにスクロール（タイムアウト付き）
     try {
@@ -72,7 +106,7 @@ export async function scrapeSite(
     }
 
     // 追加の待機時間（アニメーションなどの完了を待つ）
-    await page.waitForTimeout(1500);
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     // HTMLを取得
     const html = await page.content();
@@ -82,20 +116,18 @@ export async function scrapeSite(
     let screenshot: Buffer | undefined;
     if (options.takeScreenshot) {
       try {
-        screenshot = await page.screenshot({
+        const screenshotData = await page.screenshot({
           fullPage: true,
           type: 'jpeg',
           quality: 80, // 圧縮してストレージを節約
-          timeout: 30000, // スクリーンショットのタイムアウト
         });
+        screenshot = Buffer.from(screenshotData as Uint8Array);
         console.log('📸 スクリーンショット撮影完了');
       } catch (screenshotError) {
         console.error('⚠️ スクリーンショット撮影に失敗しましたが、続行します:', screenshotError);
         // スクリーンショット失敗してもチェックは続行
       }
     }
-
-    await context.close();
 
     // HTMLをクリーニング
     const cleanedHtml = cleanHtml(html);
@@ -145,7 +177,7 @@ async function waitForImages(page: any): Promise<void> {
       const images = Array.from(document.images);
       
       await Promise.all(
-        images.map((img) => {
+        images.map((img: HTMLImageElement) => {
           // 既に読み込まれている場合
           if (img.complete) {
             return Promise.resolve();
@@ -216,4 +248,3 @@ function cleanHtml(html: string): string {
     .replace(/\s+/g, ' ') // 複数の空白を1つに
     .trim();
 }
-

@@ -1,4 +1,10 @@
 {
+  "compilerOptions": {
+    "lib": ["deno.window"],
+    "types": [
+      "https://esm.sh/@supabase/supabase-js@2/dist/module/index.d.ts"
+    ]
+  },
   "tasks": {
     "start": "deno run --allow-all --watch=static/,routes/ dev.ts"
   },
