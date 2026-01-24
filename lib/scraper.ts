@@ -23,34 +23,24 @@ export async function scrapeSite(
   let browser;
   
   if (isProduction) {
-    // 本番環境: puppeteer-core + @sparticuz/chromium-min（外部バイナリ使用）
+    // 本番環境: puppeteer-core + chrome-aws-lambda
     const puppeteerCore = await import('puppeteer-core');
-    const chromium = await import('@sparticuz/chromium-min');
+    const chromium = await import('chrome-aws-lambda');
     
-    console.log('🚀 Launching browser in production mode (using external chromium)');
-    
-    // 外部からChromiumバイナリをダウンロード
-    const executablePath = await chromium.default.executablePath(
-      'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
-    );
-    
-    console.log('📦 Chromium executable path:', executablePath);
+    console.log('🚀 Launching browser in production mode (chrome-aws-lambda)');
     
     browser = await puppeteerCore.default.launch({
-      args: [
-        ...chromium.default.args,
-        '--disable-gpu',
-        '--disable-dev-shm-usage',
-        '--no-first-run',
-        '--single-process',
-      ],
-      defaultViewport: { width: 1920, height: 1080 },
-      executablePath,
-      headless: true,
+      args: chromium.default.args,
+      defaultViewport: chromium.default.defaultViewport,
+      executablePath: await chromium.default.executablePath,
+      headless: chromium.default.headless,
+      ignoreHTTPSErrors: true,
     });
   } else {
     // 開発環境: puppeteer (Chromium同梱版)
     const puppeteerFull = await import('puppeteer');
+    
+    console.log('🚀 Launching browser in development mode (Puppeteer)');
     
     browser = await puppeteerFull.default.launch({
       args: [
