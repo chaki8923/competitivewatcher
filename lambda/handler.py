@@ -47,7 +47,7 @@ def lambda_handler(event, context):
         driver = webdriver.Chrome(service=service, options=chrome_options)
         
         try:
-            # ページにアクセス
+            # ページにアクセス!
             print(f'📥 ページ読み込み中...')
             driver.set_page_load_timeout(60)
             driver.get(url)
