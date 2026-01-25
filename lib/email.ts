@@ -17,7 +17,7 @@ export async function sendFeedbackNotification(feedback: {
     const { data, error } = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
       to: process.env.DEVELOPER_EMAIL!,
-      subject: `[Competitive Watcher] 新しいフィードバック: ${feedback.title}`,
+      subject: `[Track On] 新しいフィードバック: ${feedback.title}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -56,7 +56,7 @@ export async function sendFeedbackNotification(feedback: {
                 </a>
               </div>
               <div class="footer">
-                <p>Competitive Watcher - 競合サイト監視SaaS</p>
+                <p>Track On - 競合サイト監視SaaS</p>
               </div>
             </div>
           </body>

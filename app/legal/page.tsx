@@ -7,7 +7,7 @@ export default function LegalPage() {
       <header className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
           <Link href="/" className="text-2xl font-bold text-primary-600">
-            Competitive Watcher
+            Track On
           </Link>
         </div>
       </header>

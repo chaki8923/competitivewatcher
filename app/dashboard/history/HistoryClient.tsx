@@ -145,7 +145,7 @@ export default function HistoryClient({ user, sites, history, plan }: Props) {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="text-2xl font-bold text-primary-600">
-              Competitive Watcher
+              Track On
             </Link>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">{user.email}</span>

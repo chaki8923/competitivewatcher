@@ -107,7 +107,7 @@ export default function SignupPage() {
         {/* ロゴ */}
         <div className="text-center mb-8">
           <Link href="/" className="text-3xl font-bold text-primary-600">
-            Competitive Watcher
+            Track On
           </Link>
           <p className="text-gray-600 mt-2">無料で始める</p>
         </div>

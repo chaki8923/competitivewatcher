@@ -124,7 +124,7 @@ export default function CompareClient({ user, sites, plan }: Props) {
                 href="/dashboard"
                 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent hover:from-primary-700 hover:to-primary-600 transition"
               >
-                Competitive Watcher
+                Track On
               </Link>
               <span className="text-gray-400">|</span>
               <div className="flex items-center space-x-2">
