@@ -62,10 +62,23 @@ async function scrapeWithLambda(
 
     const data = await response.json();
 
+    console.log('🔍 Lambda response:', {
+      hasHtml: !!data.html,
+      htmlLength: data.html?.length,
+      hasScreenshot: !!data.screenshot,
+      screenshotLength: data.screenshot?.length,
+      screenshotType: typeof data.screenshot,
+      title: data.title
+    });
+
     // Base64スクリーンショットをBufferに変換
     let screenshot: Buffer | undefined;
     if (data.screenshot) {
+      console.log(`📦 Converting screenshot to Buffer: ${data.screenshot.substring(0, 50)}...`);
       screenshot = Buffer.from(data.screenshot, 'base64');
+      console.log(`✅ Buffer created: ${screenshot.length} bytes`);
+    } else {
+      console.log(`⚠️ No screenshot in Lambda response`);
     }
 
     // HTMLをクリーニング
