@@ -1,6 +1,6 @@
 terraform {
   required_version = ">= 1.0"
-  
+   
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -10,12 +10,20 @@ terraform {
       source  = "hashicorp/archive"
       version = "~> 2.4"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 }
 
 provider "aws" {
   region = var.aws_region
 }
+
+# -----------------------------------------------------------
+# 1. IAM Role & Policies
+# -----------------------------------------------------------
 
 # Lambda実行用IAMロール
 resource "aws_iam_role" "lambda_scraper_role" {
@@ -39,51 +47,103 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# Lambda Layer（Chromium + ChromeDriver）
-# 公開されているレイヤーARNを直接使用するため、リソース作成は不要
+# -----------------------------------------------------------
+# 2. Layer Deployment via S3 (Fix for 413 Entity Too Large)
+# -----------------------------------------------------------
 
-# Lambda関数のソースコードをZIP化
+# バケット名の重複を防ぐためのランダム文字列生成
+resource "random_string" "bucket_suffix" {
+  length  = 8
+  special = false
+  upper   = false
+}
+
+# レイヤー一時保管用のS3バケット作成
+resource "aws_s3_bucket" "lambda_layers" {
+  bucket        = "lambda-layers-${random_string.bucket_suffix.result}"
+  force_destroy = true # `terraform destroy`時に中身ごと削除可能にする
+}
+
+# S3へchromium.zipをアップロード
+resource "aws_s3_object" "chromium_zip" {
+  bucket = aws_s3_bucket.lambda_layers.id
+  key    = "chromium.zip"
+  source = "${path.module}/chromium.zip"
+  etag   = filemd5("${path.module}/chromium.zip") # ファイル変更検知用
+}
+
+# S3上のzipを参照してLambda Layerを作成
+resource "aws_lambda_layer_version" "chromium_layer" {
+  layer_name = "chromium-layer"
+
+  # S3経由にすることでアップロードサイズ制限を回避
+  s3_bucket = aws_s3_bucket.lambda_layers.id
+  s3_key    = aws_s3_object.chromium_zip.key
+
+  # ソースコードが変更されたらレイヤーも更新する
+  source_code_hash    = filebase64sha256("${path.module}/chromium.zip")
+  compatible_runtimes = ["nodejs18.x", "nodejs20.x"]
+  description         = "@sparticuz/chromium layer"
+}
+
+# -----------------------------------------------------------
+# 3. Lambda Function Code Packaging
+# -----------------------------------------------------------
+
 data "archive_file" "lambda_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../lambda"
   output_path = "${path.module}/lambda_function.zip"
+
+  # レイヤーで提供されるため、コードからは除外
+  excludes = [
+    "node_modules/@sparticuz/chromium"
+  ]
 }
 
-# Lambda関数
+# -----------------------------------------------------------
+# 4. Lambda Function Definition
+# -----------------------------------------------------------
+
 resource "aws_lambda_function" "scraper" {
   filename         = data.archive_file.lambda_zip.output_path
   function_name    = "competitive-watcher-scraper"
-  role            = aws_iam_role.lambda_scraper_role.arn
-  handler         = "handler.handler"
+  role             = aws_iam_role.lambda_scraper_role.arn
+  handler          = "handler.handler"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-  runtime         = "nodejs20.x"
-  timeout         = 120
-  memory_size     = 3008
+  runtime          = "nodejs20.x"
+  timeout          = 120
+  memory_size      = 3008
 
-  # chromium-minを直接含めるのでレイヤー不要
+  # 作成したレイヤーを適用
+  layers = [aws_lambda_layer_version.chromium_layer.arn]
 
   environment {
     variables = {
       NODE_ENV = "production"
+      # 必要に応じてフォント設定などを追加
+      # AWS_LAMBDA_EXEC_WRAPPER = "/opt/bootstrap"
     }
   }
 }
 
-# Lambda Function URL（API Gateway不要で直接アクセス可能）
+# -----------------------------------------------------------
+# 5. Function URL & Logging
+# -----------------------------------------------------------
+
 resource "aws_lambda_function_url" "scraper_url" {
   function_name      = aws_lambda_function.scraper.function_name
-  authorization_type = "NONE"  # 認証はアプリケーション側で実施
+  authorization_type = "NONE"
 
   cors {
     allow_credentials = true
     allow_origins     = ["*"]
     allow_methods     = ["POST"]
     allow_headers     = ["*"]
-    max_age          = 86400
+    max_age           = 86400
   }
 }
 
-# CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "lambda_logs" {
   name              = "/aws/lambda/${aws_lambda_function.scraper.function_name}"
   retention_in_days = 7
