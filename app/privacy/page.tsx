@@ -7,7 +7,7 @@ export default function PrivacyPage() {
       <header className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
           <Link href="/" className="text-2xl font-bold text-primary-600">
-            Competitive Watcher
+            Track On
           </Link>
         </div>
       </header>
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
         <div className="bg-white rounded-lg shadow-sm p-8 space-y-8">
           <section>
             <p className="text-gray-700">
-              Competitive Watcher（以下「当社」といいます）は、ユーザーの個人情報の取扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」といいます）を定めます。
+              Track On（以下「当社」といいます）は、ユーザーの個人情報の取扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」といいます）を定めます。
             </p>
           </section>
 
@@ -194,7 +194,7 @@ export default function PrivacyPage() {
             <div className="text-gray-700 space-y-3">
               <p>本ポリシーに関するお問い合わせは、以下の窓口までお願いいたします。</p>
               <div className="bg-gray-50 p-4 rounded-lg mt-4">
-                <p className="font-semibold">Competitive Watcher 運営事務局</p>
+                <p className="font-semibold">Track On 運営事務局</p>
                 <p className="mt-2">
                   {/* TODO: 実際のメールアドレスを記入 */}
                   メール：<span className="text-primary-600">[お問い合わせメールアドレスを記入してください]</span>

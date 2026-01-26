@@ -170,7 +170,7 @@ export default function DashboardClient({ user, profile, sites }: Props) {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="text-2xl font-bold text-primary-600">
-              Competitive Watcher
+              Track On
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">{user.email}</span>

@@ -7,7 +7,7 @@ export default function HomePage() {
       <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
           <div className="text-2xl font-bold text-primary-600">
-            Competitive Watcher
+            Track On
           </div>
           <div className="space-x-4">
             <Link
@@ -83,7 +83,7 @@ export default function HomePage() {
         {/* 機能セクション */}
         <div className="max-w-5xl mx-auto mt-24">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Competitive Watcherができること
+            Track Onができること
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             {[

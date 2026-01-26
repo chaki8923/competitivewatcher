@@ -164,7 +164,7 @@ export async function notifyChange(
   try {
     await sendEmailNotification(
       userEmail,
-      `[Competitive Watcher] ${content.siteName}に変更を検知`,
+      `[Track On] ${content.siteName}に変更を検知`,
       content
     );
     results.email = true;

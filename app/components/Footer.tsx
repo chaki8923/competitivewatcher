@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-8">
           {/* ブランド */}
           <div>
-            <h3 className="text-white font-bold text-lg mb-4">Competitive Watcher</h3>
+            <h3 className="text-white font-bold text-lg mb-4">Track On</h3>
             <p className="text-sm text-gray-400">
               競合サイトの変更を自動監視し、マーケティング施策を提案するSaaSツール
             </p>
@@ -69,7 +69,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-500">
-          <p>&copy; 2026 Competitive Watcher. All rights reserved.</p>
+          <p>&copy; 2026 Track On. All rights reserved.</p>
         </div>
       </div>
     </footer>

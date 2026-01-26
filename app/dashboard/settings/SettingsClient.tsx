@@ -77,7 +77,7 @@ export default function SettingsClient({ user, profile }: Props) {
               href="/dashboard"
               className="text-2xl font-bold text-primary-600"
             >
-              Competitive Watcher
+              Track On
             </Link>
             <span className="text-sm text-gray-600">{user.email}</span>
           </div>

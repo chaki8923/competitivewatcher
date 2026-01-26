@@ -51,7 +51,7 @@ export default function SiteDetailClient({ site, changes }: Props) {
             href="/dashboard"
             className="text-2xl font-bold text-primary-600"
           >
-            Competitive Watcher
+            Track On
           </Link>
         </div>
       </header>

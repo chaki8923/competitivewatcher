@@ -7,7 +7,7 @@ export default function TermsPage() {
       <header className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
           <Link href="/" className="text-2xl font-bold text-primary-600">
-            Competitive Watcher
+            Track On
           </Link>
         </div>
       </header>
@@ -21,7 +21,7 @@ export default function TermsPage() {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">第1条（適用）</h2>
             <div className="text-gray-700 space-y-3">
               <p>
-                本利用規約（以下「本規約」といいます）は、Competitive Watcher（以下「本サービス」といいます）の提供条件および本サービスの利用に関する当社とユーザーとの間の権利義務関係を定めることを目的とし、ユーザーと当社との間の本サービスの利用に関わる一切の関係に適用されます。
+                本利用規約（以下「本規約」といいます）は、Track On（以下「本サービス」といいます）の提供条件および本サービスの利用に関する当社とユーザーとの間の権利義務関係を定めることを目的とし、ユーザーと当社との間の本サービスの利用に関わる一切の関係に適用されます。
               </p>
               <p>
                 ユーザーは、本サービスを利用することにより、本規約に同意したものとみなされます。
@@ -34,7 +34,7 @@ export default function TermsPage() {
             <div className="text-gray-700 space-y-3">
               <p>本規約において使用する用語の定義は、以下のとおりとします。</p>
               <ul className="list-decimal list-inside space-y-2 ml-4">
-                <li>「本サービス」：当社が提供する「Competitive Watcher」という名称のウェブサービス</li>
+                <li>「本サービス」：当社が提供する「Track On」という名称のウェブサービス</li>
                 <li>「ユーザー」：本サービスを利用する個人または法人</li>
                 <li>「登録情報」：ユーザーが本サービスの利用にあたって登録する情報</li>
                 <li>「コンテンツ」：ユーザーが本サービスを通じて監視・取得する第三者のウェブサイト情報</li>
