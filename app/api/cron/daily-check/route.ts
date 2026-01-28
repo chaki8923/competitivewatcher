@@ -29,23 +29,15 @@ export async function POST(request: Request) {
   );
 
   try {
-    // 1. アクティブな監視サイトを取得（プランと最終チェック時刻を含む）
-    const { data: sites, error } = await supabase
+    // 1. アクティブな監視サイトを取得
+    const { data: sites, error: sitesError } = await supabase
       .from('monitored_sites')
-      .select(`
-        id,
-        name,
-        url,
-        is_active,
-        last_checked_at,
-        user_id,
-        profiles!inner(plan)
-      `)
+      .select('id, name, url, is_active, last_checked_at, user_id')
       .eq('is_active', true)
       .order('last_checked_at', { ascending: true, nullsFirst: true });
 
-    if (error) {
-      throw error;
+    if (sitesError) {
+      throw sitesError;
     }
 
     console.log(`[CRON] Found ${sites?.length || 0} active sites`);
@@ -60,14 +52,36 @@ export async function POST(request: Request) {
       });
     }
 
-    // 2. プラン別の daily_check_limit を定義
+    // 2. ユニークなuser_idを抽出
+    const userIds = [...new Set(sites.map(s => s.user_id))];
+
+    // 3. ユーザーのプラン情報を取得
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, plan')
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error('[CRON] Error fetching profiles:', profilesError);
+      // プラン情報が取れない場合はfreeとして扱う
+    }
+
+    // 4. user_id -> plan のマップを作成
+    const userPlanMap: Record<string, string> = {};
+    if (profiles) {
+      for (const profile of profiles) {
+        userPlanMap[profile.id] = profile.plan || 'free';
+      }
+    }
+
+    // 5. プラン別の daily_check_limit を定義
     const DAILY_CHECK_LIMITS: Record<string, number> = {
       free: 1,
       pro: 5,
       business: 999,
     };
 
-    // 3. 今日のチェック回数をユーザーごとに集計
+    // 6. 今日のチェック回数をユーザーごとに集計
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -87,10 +101,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. チェック可能なサイトをフィルタリング + 優先順位付け
+    // 7. チェック可能なサイトをフィルタリング + 優先順位付け
     const eligibleSites = sites
       .map(site => {
-        const plan = (site.profiles as any)?.plan || 'free';
+        const plan = userPlanMap[site.user_id] || 'free';
         const limit = DAILY_CHECK_LIMITS[plan] || 1;
         const userCheckCount = checkCountByUser[site.user_id] || 0;
         const canCheck = userCheckCount < limit;
@@ -115,7 +129,7 @@ export async function POST(request: Request) {
 
     console.log(`[CRON] Eligible sites after plan filtering: ${eligibleSites.length}`);
 
-    // 5. 最大10サイトに制限（タイムアウト回避）
+    // 8. 最大10サイトに制限（タイムアウト回避）
     const BATCH_SIZE = 10;
     const sitesToCheck = eligibleSites.slice(0, BATCH_SIZE);
 
@@ -123,7 +137,7 @@ export async function POST(request: Request) {
 
     const results = [];
 
-    // 6. 各サイトをチェック
+    // 9. 各サイトをチェック
     for (const site of sitesToCheck) {
       try {
         // 内部APIを呼び出す（絶対URLが必要）
