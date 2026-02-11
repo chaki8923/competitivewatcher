@@ -8,9 +8,12 @@ type Props = {
   progress: number; // 0-100
 };
 
+const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "";
+
 const LOADING_VIDEOS = [
-  "/circle_tra.mp4",
-  "/circle_search.mp4"
+  `${R2_PUBLIC_URL}/circle_tra.mp4`,
+  `${R2_PUBLIC_URL}/circle_search.mp4`,
+  `${R2_PUBLIC_URL}/circle_sleep.mp4`
 ];
 
 export default function CheckingModal({ isOpen, siteName, progress }: Props) {
