@@ -49,11 +49,27 @@ export async function POST(
     });
 
     // Lambda内でR2にアップロード済みなので、URLを受け取るだけ
-    const screenshotUrl = scrapedContent.screenshotUrl || null;
+    let screenshotUrl = scrapedContent.screenshotUrl || null;
+
+    // 開発環境（Puppeteer）の場合、Bufferが返ってくるのでここでアップロード
+    if (!screenshotUrl && scrapedContent.screenshot && takeScreenshot) {
+      try {
+        console.log('📸 開発環境: スクリーンショットをR2にアップロード中...');
+        screenshotUrl = await uploadScreenshot(
+          scrapedContent.screenshot,
+          site.id,
+          Date.now()
+        );
+        console.log(`✅ アップロード完了: ${screenshotUrl}`);
+      } catch (e) {
+        console.error('❌ スクリーンショットのアップロードに失敗:', e);
+      }
+    }
+
     if (screenshotUrl) {
-      console.log(`✅ LambdaからスクリーンショットURLを受け取り: ${screenshotUrl}`);
+      console.log(`✅ スクリーンショットURLを取得: ${screenshotUrl}`);
     } else if (takeScreenshot) {
-      console.log(`⚠️ LambdaからスクリーンショットURLが返されませんでした`);
+      console.log(`⚠️ スクリーンショットURLが取得できませんでした`);
     }
 
     // 前回のスナップショットを取得（スクショURLも含む）
