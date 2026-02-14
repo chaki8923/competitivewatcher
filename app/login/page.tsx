@@ -1,48 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { login } from "./actions";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {pending ? "ログイン中..." : "ログイン"}
+    </button>
+  );
+}
+
+const initialState = {
+  error: "",
+};
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const supabase = createClient();
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        // レート制限エラーの場合
-        if (error.message.includes('rate limit')) {
-          throw new Error('アクセスが集中しています。少し時間をおいてから再度お試しください。');
-        }
-        throw error;
-      }
-
-      if (data.user) {
-        router.push("/dashboard");
-        router.refresh();
-      }
-    } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.message || "ログインに失敗しました");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [state, formAction] = useFormState(login, initialState);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-4">
@@ -57,13 +38,13 @@ export default function LoginPage() {
 
         {/* ログインフォーム */}
         <div className="bg-white rounded-lg shadow-lg p-8">
-          {error && (
+          {state?.error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">
-              {error}
+              {state.error}
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form action={formAction} className="space-y-6">
             <div>
               <label
                 htmlFor="email"
@@ -73,10 +54,9 @@ export default function LoginPage() {
               </label>
               <input
                 id="email"
+                name="email"
                 type="email"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                 placeholder="you@example.com"
               />
@@ -91,22 +71,15 @@ export default function LoginPage() {
               </label>
               <input
                 id="password"
+                name="password"
                 type="password"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                 placeholder="••••••••"
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "ログイン中..." : "ログイン"}
-            </button>
+            <SubmitButton />
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-600">
@@ -120,4 +93,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
