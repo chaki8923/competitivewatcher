@@ -40,8 +40,8 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">料金プラン</h4>
             <ul className="space-y-2 text-sm">
               <li className="text-gray-400">Free：無料</li>
-              <li className="text-gray-400">Pro：¥4,800/月</li>
-              <li className="text-gray-400">Business：¥9,800/月</li>
+              <li className="text-gray-400">Pro：¥2,800/月</li>
+              <li className="text-gray-400">Business：¥4,800/月</li>
             </ul>
           </div>
 

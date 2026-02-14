@@ -128,13 +128,13 @@ export default function HomePage() {
               },
               {
                 name: "Pro",
-                price: "¥4,800",
+                price: "¥2,800",
                 features: ["5サイトまで", "毎日チェック", "Slack通知", "優先サポート"],
                 recommended: true,
               },
               {
                 name: "Business",
-                price: "¥9,800",
+                price: "¥4,800",
                 features: ["20サイトまで", "毎日チェック", "Slack通知", "専任サポート"],
               },
             ].map((plan, i) => (
